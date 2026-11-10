@@ -1,0 +1,8 @@
+[project]
+name = "stocks"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas>=3.1.1",
+    "yfinance>=1.8.0",
+]

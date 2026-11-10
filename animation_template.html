@@ -1,0 +1,1259 @@
+<meta charset="utf-8">
+<title>Buying the Crash</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control strip, then two stacked tape charts (index, portfolio) beside a live ledger; one column on phones */
+:root {
+  --bg: #f4f6f8; --surface: #ffffff; --ink: #11161c; --ink-2: #4a535d; --ink-3: #78828d;
+  --line: #d9dee4; --grid: #e9edf1; --hover: #eef3fa; --band: #fbe9df; --ls-band: #d6e5f8;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --surface: #171b1f; --ink: #edf0f3; --ink-2: #b6bec7; --ink-3: #87909a;
+    --line: #2a3037; --grid: #21262c; --hover: #1d2733; --band: #33231b; --ls-band: #1c3350;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1215; --surface: #171b1f; --ink: #edf0f3; --ink-2: #b6bec7; --ink-3: #87909a;
+  --line: #2a3037; --grid: #21262c; --hover: #1d2733; --band: #33231b; --ls-band: #1c3350;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-display); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 40px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px; }
+header h1 { font-size: clamp(28px, 4.4vw, 44px); font-weight: 800; font-stretch: 112%; letter-spacing: -0.02em; margin: 0; line-height: 1.05; text-wrap: balance; }
+header p { margin: 8px 0 0; color: var(--ink-2); max-width: 68ch; }
+.mono, .num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; }
+.field { display: grid; gap: 6px; min-width: 0; }
+select, button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+button { cursor: pointer; }
+button:hover:not(:disabled) { background: var(--hover); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.seg { display: flex; flex-wrap: wrap; }
+.seg button { border-radius: 0; margin-left: -1px; }
+.seg button:first-child { border-radius: 6px 0 0 6px; margin-left: 0; }
+.seg button:last-child { border-radius: 0 6px 6px 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); position: relative; }
+.play { display: flex; gap: 8px; }
+#playBtn { min-width: 84px; font-weight: 600; background: var(--s1); color: #fff; border-color: var(--s1); }
+.scrub { flex: 1 1 260px; }
+#scrub { width: 100%; accent-color: var(--s1); }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.charts { display: grid; gap: 14px; position: relative; }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; align-items: baseline; margin-bottom: 6px; }
+.chart-head h2 { font-size: 15px; margin: 0; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--ink-2); }
+.key { display: inline-block; width: 16px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+.key.dash { border-top-style: dashed; }
+.key.dot { width: 9px; height: 9px; border: 0; border-radius: 50%; }
+.key.band { width: 14px; height: 10px; border: 0; border-radius: 2px; }
+canvas { display: block; width: 100%; touch-action: pan-y; }
+#priceCv { height: 300px; }
+#valueCv { height: 220px; }
+
+.side { display: grid; gap: 14px; }
+.now-date { font-family: var(--f-mono); font-size: 26px; font-weight: 500; line-height: 1.1; }
+.now-close { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.strat { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--grid); }
+.strat:first-of-type { border-top: 0; }
+.strat .name { font-weight: 600; font-size: 14px; }
+.strat .val { font-family: var(--f-mono); font-variant-numeric: tabular-nums; font-size: 15px; text-align: right; }
+.strat .sub { grid-column: 2 / 4; font-size: 12px; color: var(--ink-3); font-family: var(--f-mono); }
+.log { list-style: none; margin: 8px 0 0; padding: 0; max-height: 330px; overflow-y: auto; display: grid; gap: 2px; }
+.log li { padding: 7px 8px; border-radius: 6px; font-size: 13px; display: grid; gap: 1px; }
+.log li .top { display: flex; justify-content: space-between; gap: 8px; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.log li .why { color: var(--ink-3); font-size: 12px; }
+.log li.fresh { animation: flash 1.4s ease-out; }
+@keyframes flash { from { background: var(--hover); } to { background: transparent; } }
+.empty { color: var(--ink-3); font-size: 13px; margin: 8px 0 0; }
+
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgb(0 0 0 / 0.12); min-width: 180px; z-index: 5; }
+.tip .d { font-family: var(--f-mono); color: var(--ink-2); margin-bottom: 4px; }
+.tip .row { display: flex; justify-content: space-between; gap: 12px; }
+.tip .row b { font-family: var(--f-mono); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+td { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+td:first-child { font-family: var(--f-display); font-weight: 600; }
+tr.best td { background: var(--hover); }
+.note { color: var(--ink-3); font-size: 12px; margin: 10px 0 0; max-width: 90ch; }
+
+.sec-title { font-size: clamp(22px, 3vw, 30px); font-weight: 800; font-stretch: 108%; letter-spacing: -0.01em; line-height: 1.15; margin: 4px 0 6px; text-wrap: balance; }
+.lede { color: var(--ink-2); max-width: 72ch; margin: 0 0 18px; }
+.check-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .check-grid { grid-template-columns: minmax(0, 1fr); } }
+.check h3 { font-size: 15px; margin: 0; font-weight: 700; }
+.bars { display: grid; gap: 2px; }
+.bar-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 60px; gap: 3px 10px; align-items: center; padding: 6px; border-radius: 6px; }
+.bar-row:hover, .bar-row:focus-visible { background: var(--hover); }
+.bar-lbl { font-weight: 600; font-size: 13px; }
+.bar-track { position: relative; height: 14px; }
+.bar-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--ink-3); }
+.bar { position: absolute; top: 0; bottom: 0; }
+.bar.neg { background: var(--s1); border-radius: 4px 0 0 4px; }
+.bar.pos { background: var(--s2); border-radius: 0 4px 4px 0; }
+.bar-val { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; font-size: 13px; }
+.bar-sub { grid-column: 2 / 4; font-size: 12px; color: var(--ink-3); }
+.bar-note { grid-column: 2 / 4; font-size: 12px; color: var(--ink-2); border-left: 2px solid var(--s2); padding-left: 8px; }
+.bar-note b { font-weight: 600; }
+.len-pick { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 0 0 14px; }
+.check-foot { color: var(--ink-2); font-size: 13px; margin: 10px 6px 0; }
+#lenBody tr { cursor: pointer; }
+#lenBody tr:hover td { background: var(--hover); }
+tr.current td { background: var(--hover); font-weight: 600; }
+.ls-stack { display: grid; gap: 18px; }
+.ls-chart { max-width: 760px; }
+.load-err { margin: 0; padding: 10px 14px; border: 1px solid var(--s2); border-radius: 8px; color: var(--ink); background: var(--surface); }
+.sc-controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; margin: 0 0 14px; }
+.sc-chart { width: 100%; height: auto; display: block; }
+.sc-chart text { font-family: var(--f-mono); font-size: 11px; fill: var(--ink-3); }
+.sc-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.sc-legend button { font-size: 13px; padding: 4px 9px; display: inline-flex; align-items: center; }
+.sc-legend button[aria-pressed="false"] { opacity: 0.45; text-decoration: line-through; }
+.sc-table td { vertical-align: top; }
+.sc-table td .sub { display: block; font-size: 11px; color: var(--ink-3); }
+.sc-table th button { font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--ink-2); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.rank-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 20px; align-items: end; margin-bottom: 8px; }
+.rank-table td.dim { color: var(--ink-3); }
+.rank-years { min-width: 180px; }
+.rank-years input { width: 100%; accent-color: var(--s1); margin: 0; }
+.rank-ticks { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+.rank-table .gap { display: inline-block; height: 8px; border-radius: 0 4px 4px 0; background: var(--s2); vertical-align: middle; margin-left: 8px; }
+.rank-table td.date-cell { font-family: var(--f-mono); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="label" id="eyebrow">Price-only index closes · $1,000 per triggered buy</div>
+    <h1>Buying the Crash</h1>
+    <p>Watch each rule buy into the 1929 and 2000 crashes, day by day. The other two lines put the same total money in all at once on day one, or split it evenly across every month.</p>
+  </header>
+
+  <div class="controls">
+    <div class="field"><label class="label" for="crash">Crash</label><select id="crash"></select></div>
+    <div class="field"><label class="label" for="start">Start buying</label><select id="start"></select></div>
+    <div class="field"><span class="label" id="viewLbl">View</span>
+      <div class="seg" id="view" role="group" aria-labelledby="viewLbl">
+        <button type="button" data-view="one">One rule</button>
+        <button type="button" data-view="compare">Compare rules</button>
+      </div>
+    </div>
+    <div class="field"><span class="label" id="ruleLbl">Buy rule</span><div class="seg" id="rules" role="group" aria-labelledby="ruleLbl"></div></div>
+    <div class="field"><span class="label">Replay</span>
+      <div class="play">
+        <button id="playBtn" type="button">Play</button>
+        <select id="speed" aria-label="Replay speed">
+          <option value="60">60 days/s</option>
+          <option value="150" selected>150 days/s</option>
+          <option value="400">400 days/s</option>
+        </select>
+      </div>
+    </div>
+    <div class="field scrub"><label class="label" for="scrub">Date</label><input id="scrub" type="range" min="0" max="1" value="0"></div>
+  </div>
+
+  <p class="load-err" id="loadErr" role="alert" hidden></p>
+  <div class="main">
+    <div class="charts">
+      <div class="panel">
+        <div class="chart-head">
+          <h2 id="priceTitle">Index close</h2>
+          <div class="legend">
+            <span><i class="key" style="border-color:var(--ink)"></i>Close</span>
+            <span id="trigKey"><i class="key dash" style="border-color:var(--ink-3)"></i>Next buy trigger</span>
+            <span><i class="key dot" id="buyDot" style="background:var(--s1)"></i><span id="buyLbl">Buy</span></span>
+            <span id="pauseKey" hidden><i class="key band" style="background:var(--band)"></i>Paused</span>
+          </div>
+        </div>
+        <canvas id="priceCv" aria-label="Index close with buy markers"></canvas>
+      </div>
+      <div class="panel">
+        <div class="chart-head">
+          <h2 id="valueTitle">Portfolio value</h2>
+          <div class="legend" id="valueLegend"></div>
+        </div>
+        <canvas id="valueCv" aria-label="Portfolio value of each strategy"></canvas>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+
+    <aside class="side">
+      <div class="panel">
+        <div class="label">On this day</div>
+        <div class="now-date" id="nowDate">—</div>
+        <div class="now-close" id="nowClose"></div>
+        <div id="strats" style="margin-top:8px"></div>
+      </div>
+      <div class="panel" id="logPanel">
+        <div class="label" id="logTitle">Buys</div>
+        <ol class="log" id="log" reversed></ol>
+        <p class="empty" id="logEmpty">No buys yet.</p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="panel">
+    <div class="chart-head"><h2 id="sumTitle">Final result</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead id="sumHead"></thead>
+        <tbody id="sumBody"></tbody>
+      </table>
+    </div>
+    <p class="note" id="compareNote" hidden>Rules put in different amounts at different times, so compare them by return, not dollars. "vs same money, monthly" compares each rule with putting its own total in evenly every month over the same period: the fairest single number here. XIRR ignores time money spends waiting in cash, so it flatters rules that wait. The chart's return line starts at each rule's first buy.</p>
+    <p class="note" id="sumNote">Every number on this page was computed in Python (<span class="mono">export_animation.py</span>) from Yahoo Finance daily closes. Prices only, no dividends. Before 1957 the S&amp;P series is the 90-stock index. XIRR is the annual return that accounts for when each dollar went in.</p>
+  </div>
+  <section class="panel check" aria-labelledby="checkTitle">
+    <div class="label" id="checkEyebrow">Reality check</div>
+    <h2 class="sec-title" id="checkTitle">Does the pause work outside 1929 and 2000?</h2>
+    <p class="lede" id="checkLede"></p>
+    <div class="len-pick">
+      <span class="label" id="lenLbl">Pause length (months after the peak)</span>
+      <div class="seg" id="lenPick" role="group" aria-labelledby="lenLbl"></div>
+    </div>
+    <div class="check-grid">
+      <div>
+        <div class="chart-head">
+          <h3 id="barsTitle">Each pause: catch-up price vs what monthly DCA paid</h3>
+          <div class="legend">
+            <span><i class="key dot" style="background:var(--s1)"></i>Pause bought cheaper</span>
+            <span><i class="key dot" style="background:var(--s2)"></i>Pause paid more</span>
+          </div>
+        </div>
+        <div class="bars" id="pauseBars"></div>
+        <p class="check-foot" id="absorbedNote" hidden></p>
+      </div>
+      <div>
+        <div class="chart-head"><h3>Final value vs plain monthly DCA, by pause length</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead id="lenHead"></thead>
+            <tbody id="lenBody"></tbody>
+          </table>
+        </div>
+        <p class="note">Click a row to see its pauses. Same $1,000 on each month's first trading day in both. Cash waiting during a pause earns nothing. 1954 is when the S&amp;P got back to its 1929 high, so that column leaves the 1929 crash out. Computed in <span class="mono">pause_check.py</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="scTitle">
+    <div class="label" id="scEyebrow">Start date</div>
+    <h2 class="sec-title" id="scTitle">What if the crash comes later in your investing?</h2>
+    <p class="lede" id="scLede"></p>
+    <div class="sc-controls">
+      <div class="field"><label class="label" for="scCrash">Crash</label><select id="scCrash"></select></div>
+      <div class="field"><span class="label" id="scMetricLbl">Show</span>
+        <div class="seg" id="scMetric" role="group" aria-labelledby="scMetricLbl">
+          <button type="button" data-metric="edge">vs same money, monthly</button>
+          <button type="button" data-metric="ret">Total return</button>
+          <button type="button" data-metric="xirr">XIRR / yr</button>
+        </div>
+      </div>
+    </div>
+    <div class="sc-legend" id="scLegend" aria-label="Rules shown in the chart (click to show or hide)"></div>
+    <svg class="sc-chart" id="scChart" viewBox="0 0 900 300" role="img" aria-labelledby="scTitle"></svg>
+    <div class="table-wrap" style="margin-top:14px">
+      <table class="sc-table">
+        <thead id="scHead"></thead>
+        <tbody id="scBody"></tbody>
+      </table>
+    </div>
+    <p class="note" id="scNote"></p>
+  </section>
+
+  <section class="panel check" aria-labelledby="lsTitle">
+    <div class="label" id="lsEyebrow">Lump sum</div>
+    <h2 class="sec-title" id="lsTitle">Got a lump sum? Invest it at once, or spread it?</h2>
+    <p class="lede" id="lsLede"></p>
+    <div class="sc-controls">
+      <div class="field"><span class="label" id="lsDataLbl">Data</span>
+        <div class="seg" id="lsData" role="group" aria-labelledby="lsDataLbl">
+          <button type="button" data-set="price">S&amp;P 500, price only</button>
+          <button type="button" data-set="tr">S&amp;P 500 with dividends</button>
+        </div>
+      </div>
+    </div>
+    <div class="ls-stack">
+      <div class="ls-chart">
+        <div class="chart-head">
+          <h3>Spread over N months vs at once, every start month</h3>
+          <div class="legend">
+            <span><i class="key" style="border-color:var(--s1)"></i>Median</span>
+            <span><i class="key band" style="background:var(--ls-band)"></i>10th to 90th percentile</span>
+          </div>
+        </div>
+        <svg class="sc-chart" id="lsChart" viewBox="0 0 600 300" role="img" aria-label="Spreading the lump vs investing it at once, by number of months"></svg>
+      </div>
+      <div>
+        <div class="chart-head"><h3 id="lsRowsTitle">The numbers behind the chart</h3></div>
+        <div class="table-wrap">
+          <table class="sc-table"><thead id="lsRowsHead"></thead><tbody id="lsRowsBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+    <div class="chart-head" style="margin-top:22px;align-items:end">
+      <h3 id="lsPeakTitle">Starting on a crash peak day (S&amp;P price only, NASDAQ)</h3>
+      <div class="field"><label class="label" for="lsLead">The lump arrives</label><select id="lsLead"></select></div>
+    </div>
+    <p class="check-foot" id="lsPeakHelp" style="margin:0 0 8px"></p>
+    <div class="table-wrap"><table class="sc-table"><thead id="lsPeakHead"></thead><tbody id="lsPeakBody"></tbody></table></div>
+    <div class="chart-head" style="margin-top:22px"><h3 id="lsGridTitle">Whole portfolio after 10 years</h3></div>
+    <p class="check-foot" id="lsGridHelp" style="margin:0 0 8px"></p>
+    <div class="table-wrap"><table class="sc-table"><thead id="lsGridHead"></thead><tbody id="lsGridBody"></tbody></table></div>
+    <p class="note" id="lsNote"></p>
+  </section>
+
+  <section class="panel" aria-labelledby="rankTitle">
+    <div class="label" id="rankEyebrow">Normal DCA</div>
+    <h2 class="sec-title" id="rankTitle">Which date of the month to buy on</h2>
+    <p class="lede" id="rankLede"></p>
+    <div class="rank-head">
+      <h3 style="margin:0;font-size:15px;font-weight:700">Every date of the month, ranked</h3>
+      <div class="field rank-years"><label class="label" for="rankYears" id="rankYearsLbl">Last 10 years</label>
+        <input id="rankYears" type="range" min="0" max="2" step="1" value="0" list="rankYearsTicks" aria-describedby="rankYearsLbl">
+        <datalist id="rankYearsTicks"></datalist>
+        <div class="rank-ticks" id="rankYearsNames" aria-hidden="true"></div>
+      </div>
+      <div class="field"><span class="label" id="rankByLbl">Rank by</span>
+        <div class="seg" id="rankBy" role="group" aria-labelledby="rankByLbl">
+          <button type="button" data-key="value" aria-pressed="true">Final value</button>
+          <button type="button" data-key="vs_month" aria-pressed="false">Price vs surrounding month</button>
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="rank-table">
+        <thead><tr><th>Rank</th><th>Buy on</th><th>Final value</th><th>vs best</th><th>Avg cost</th><th>Price vs surrounding month</th></tr></thead>
+        <tbody id="rankBody"></tbody>
+      </table>
+    </div>
+    <p class="note" id="rankNote"></p>
+  </section>
+</div>
+
+<script>
+const DATA = /*DATA*/null;
+const $ = (id) => document.getElementById(id);
+const STRATS = [
+  { key: "rule", color: "--s1" },
+  { key: "lump", name: "Lump sum on day one", color: "--s2" },
+  { key: "monthly", name: "Same money, monthly", color: "--s3" },
+];
+// with normal DCA as the rule, the "same money, monthly" line would be the identical line
+const strats = () => STRATS.filter((s) => !(ruleKey === "dca" && s.key === "monthly"));
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+let compare = false, focusKey = null;
+let sc, ruleKey = "ladder", R, idx = 0, pos = 0, playing = false, lastT = 0, hoverIdx = null, pulses = [], shownBuys = -1;
+
+const money = (v) => "$" + Math.round(v).toLocaleString("en-US");
+const price = (v) => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = (v, d = 1) => (v >= 0 ? "+" : "−") + Math.abs(v * 100).toFixed(d) + "%";
+const tok = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const stratName = (s) => s.key === "rule" ? R.label : s.name;
+
+// ---------- setup ----------
+const startLabel = (m) => m.years === 0 ? `At the ${m.peak} peak`
+  : `${m.years} year${m.years === 1 ? "" : "s"} before the peak (${m.start})${Number.isInteger(m.years) ? "" : ", first day of data"}`;
+for (const [crash, c] of Object.entries(DATA.startCompare)) {
+  for (const sel of [$("crash"), $("scCrash")]) {
+    const o = document.createElement("option");
+    o.value = crash; o.textContent = `${c.era} · ${c.index}`;
+    sel.append(o);
+  }
+}
+function fillStarts() {
+  const sel = $("start");
+  sel.replaceChildren();
+  for (const m of DATA.scenarios.filter((x) => x.crash === $("crash").value)) {
+    const o = document.createElement("option");
+    o.value = m.id; o.textContent = startLabel(m);
+    sel.append(o);
+  }
+}
+const cache = new Map();
+function getScenario(id) {
+  if (!cache.has(id)) {
+    cache.set(id, fetch(`anim/${id}.json`).then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    }).catch((e) => { cache.delete(id); throw e; }));
+  }
+  return cache.get(id);
+}
+let loading = 0;
+const RULE_ORDER = ["dca", "ladder", "peak", "daily", "month10", "month4", "bear31"];
+const RULE_SHORT = {
+  dca: "Normal DCA", ladder: "10% below last buy", peak: "10% steps below high", daily: "One day −10%",
+  month10: "Monthly, 10% dip", month4: "Monthly, 4% dip", bear31: "Pause 31 mo after −20%",
+};
+const picked = new Set(RULE_ORDER);  // rules shown in compare mode
+const active = () => RULE_ORDER.filter((k) => picked.has(k) && sc.rules[k]);
+const ruleColor = (k) => `--s${RULE_ORDER.indexOf(k) + 1}`;  // a rule keeps its colour whatever else is shown
+const lumpRet = () => sc.rules.dca.series.lump.ret;  // lump-sum return % is the same whatever its size
+for (const k of RULE_ORDER) {
+  const b = document.createElement("button");
+  b.type = "button"; b.dataset.rule = k; b.textContent = RULE_SHORT[k];
+  b.addEventListener("click", () => {
+    if (!compare) { ruleKey = k; return load("play"); }
+    if (!picked.has(k)) picked.add(k);
+    else if (active().length > 1) picked.delete(k);
+    load("keep");
+  });
+  $("rules").append(b);
+}
+for (const b of $("view").children) b.addEventListener("click", () => { compare = b.dataset.view === "compare"; load("keep"); });
+
+// hovering a rule's legend or leaderboard entry highlights its line and buys
+function keyed(el, k) {
+  el.addEventListener("pointerenter", () => { focusKey = k; if (!playing) draw(); });
+  el.addEventListener("pointerleave", () => { focusKey = null; if (!playing) draw(); });
+}
+const lineKey = (color, dashed) => {
+  const k = document.createElement("i");
+  k.className = dashed ? "key dash" : "key"; k.style.borderColor = `var(${color})`;
+  return k;
+};
+const focusLast = (keys) => [...keys.filter((k) => k !== focusKey), ...keys.filter((k) => k === focusKey)];
+
+async function load(mode) {
+  const id = $("start").value, ticket = ++loading;
+  let next;
+  try {
+    next = await getScenario(id);
+  } catch (e) {
+    $("loadErr").textContent = `Couldn't load the replay data (anim/${id}.json: ${e.message}). ` +
+      "Open this page from its artifact link or a local web server; browsers block data files next to a double-clicked HTML file.";
+    $("loadErr").hidden = false;
+    return;
+  }
+  if (ticket !== loading) return;  // a newer choice was made while this one loaded
+  $("loadErr").hidden = true;
+  sc = next;
+  if (!sc.rules[ruleKey]) ruleKey = RULE_ORDER.find((k) => sc.rules[k]);
+  R = sc.rules[ruleKey];
+  for (const b of $("rules").children) {
+    const k = b.dataset.rule, ok = !!sc.rules[k];
+    b.disabled = !ok;
+    b.title = ok ? "" : "Never triggered in this window";
+    b.setAttribute("aria-pressed", String(ok && (compare ? picked.has(k) : k === ruleKey)));
+  }
+  for (const b of $("view").children) b.setAttribute("aria-pressed", String((b.dataset.view === "compare") === compare));
+  $("ruleLbl").textContent = compare ? "Rules to compare (click to show or hide)" : "Buy rule";
+  $("scrub").max = sc.dates.length - 1;
+  $("logTitle").textContent = `Buys · ${R.label}`;
+  $("logPanel").hidden = compare;
+  $("buyDot").style.background = compare ? "var(--ink-3)" : "var(--s1)";
+  $("buyLbl").textContent = compare ? "Buys, in each rule's colour" : "Buy";
+  $("pauseKey").hidden = compare || R.pauses.length === 0;
+  $("trigKey").hidden = compare || R.trigger.every((v) => v == null);
+  $("valueTitle").textContent = compare ? "Return on the money put in so far" : "Portfolio value";
+  $("compareNote").hidden = !compare;
+  $("sumTitle").textContent = `${compare ? "Rules compared" : "Final result"} · ${sc.dates[0]} to ${sc.dates.at(-1)}`;
+  $("priceTitle").textContent = `${sc.index} close · peak ${sc.peak}`;
+
+  const leg = $("valueLegend");
+  leg.replaceChildren();
+  const legendItem = (name, color, dashed, k) => {
+    const span = document.createElement("span");
+    span.append(lineKey(color, dashed), name);
+    if (k) keyed(span, k);
+    leg.append(span);
+  };
+  if (compare) {
+    for (const k of active()) legendItem(sc.rules[k].label, ruleColor(k), false, k);
+    legendItem("Lump sum on day one", "--ink-3", true, "lump");
+  } else for (const s of strats()) legendItem(stratName(s), s.color, false, null);
+
+  const head = document.createElement("tr");
+  for (const t of compare
+    ? ["Rule", "Buy days", "Invested", "Final value", "Total return", "XIRR / yr", "Avg cost", "vs same money, monthly"]
+    : ["Strategy", "Invested", "Final value", "Total return", "XIRR / yr", "Avg cost"]) {
+    const th = document.createElement("th"); th.textContent = t; head.append(th);
+  }
+  $("sumHead").replaceChildren(head);
+  const body = $("sumBody");
+  body.replaceChildren();
+  const addRow = (cells, color, best) => {
+    const tr = document.createElement("tr");
+    if (best) tr.className = "best";
+    cells.forEach((c, i) => {
+      const td = document.createElement("td");
+      if (i === 0) td.append(lineKey(color, false));
+      td.append(c);
+      tr.append(td);
+    });
+    body.append(tr);
+  };
+  if (compare) {
+    const rows = active().map((k) => [k, sc.rules[k]]).sort((a, b) => b[1].summary[0].edge - a[1].summary[0].edge);
+    rows.forEach(([k, r], i) => {
+      const x = r.summary[0];
+      addRow([r.label, String(r.events.length), money(x.invested), money(x.value), pct(x.ret), pct(x.xirr, 2), price(x.avg), pct(x.edge)],
+        ruleColor(k), i === 0);
+    });
+  } else {
+    const best = R.summary.reduce((a, b) => (b.xirr > a.xirr ? b : a));
+    for (const s of strats()) {
+      const r = R.summary.find((x) => x.key === s.key);
+      addRow([stratName(s), money(r.invested), money(r.value), pct(r.ret), pct(r.xirr, 2), price(r.avg)], s.color, r === best);
+    }
+  }
+
+  // y ranges are fixed for the whole window so the axes don't jump while playing
+  sc.priceMax = Math.max(...sc.close);
+  if (compare) {
+    const vals = [...active().flatMap((k) => sc.rules[k].series.rule.ret), ...lumpRet()].filter((v) => v != null);
+    sc.retMin = Math.min(0, ...vals); sc.retMax = Math.max(0, ...vals);
+  } else R.valueMax = Math.max(...strats().flatMap((s) => R.series[s.key].val));
+  shownBuys = -1;
+  pulses = [];
+  if (mode === "play" && !reduceMotion) { setIdx(0); play(); }
+  else if (mode === "keep") setIdx(idx);
+  else { pause(); setIdx(sc.dates.length - 1); }
+}
+
+// ---------- drawing ----------
+const canvases = {};
+function sizeCanvas(cv) {
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  canvases[cv.id] = { w: r.width, h: r.height, dpr };
+}
+const M = { l: 58, r: 14, t: 12, b: 26 };
+
+function niceTicks(lo, hi, count) {
+  const raw = (hi - lo) / count, mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw);
+  const out = [];
+  for (let i = Math.floor(lo / step); ; i++) {
+    out.push(i * step);
+    if (i * step >= hi) break;
+  }
+  return { ticks: out, bottom: out[0], top: out.at(-1) };
+}
+
+function frame(cv, yMin, yMax, yFmt) {
+  const { w, h, dpr } = canvases[cv.id];
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const n = sc.dates.length;
+  const { ticks, bottom, top } = niceTicks(yMin, yMax, 4);
+  const pw = w - M.l - M.r, ph = h - M.t - M.b;
+  const x = (i) => M.l + (i / (n - 1)) * pw;
+  const y = (v) => M.t + ph - ((v - bottom) / (top - bottom)) * ph;
+  ctx.font = `11px ${tok("--f-mono")}`;
+  ctx.textBaseline = "middle";
+  ctx.lineWidth = 1;
+  for (const t of ticks) {
+    ctx.strokeStyle = tok("--grid");
+    ctx.beginPath(); ctx.moveTo(M.l, Math.round(y(t)) + 0.5); ctx.lineTo(w - M.r, Math.round(y(t)) + 0.5); ctx.stroke();
+    ctx.fillStyle = tok("--ink-3"); ctx.textAlign = "right";
+    ctx.fillText(yFmt(t), M.l - 8, y(t));
+  }
+  // year ticks, thinned to fit
+  const years = [];
+  sc.dates.forEach((d, i) => { if (i === 0 || d.slice(0, 4) !== sc.dates[i - 1].slice(0, 4)) years.push([i, d.slice(0, 4)]); });
+  const every = Math.max(1, Math.ceil(years.length / Math.max(2, Math.floor(pw / 52))));
+  ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillStyle = tok("--ink-3");
+  years.forEach(([i, yr], k) => { if (k % every === 0 && x(i) > M.l + 12) ctx.fillText(yr, x(i), h - M.b + 8); });
+  return { ctx, x, y, w, h };
+}
+
+function path(ctx, x, y, arr, upto, step) {
+  ctx.beginPath();
+  let open = false;
+  for (let i = 0; i <= upto; i++) {
+    const v = arr[i];
+    if (v == null) { open = false; continue; }
+    if (!open) { ctx.moveTo(x(i), y(v)); open = true; continue; }
+    if (step) ctx.lineTo(x(i), y(arr[i - 1] ?? v));
+    ctx.lineTo(x(i), y(v));
+  }
+  ctx.stroke();
+}
+
+function cursorLine(ctx, x, h, i, color) {
+  ctx.strokeStyle = color; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(Math.round(x(i)) + 0.5, M.t); ctx.lineTo(Math.round(x(i)) + 0.5, h - M.b); ctx.stroke();
+}
+
+function drawPrice(now) {
+  const cv = $("priceCv");
+  const { ctx, x, y, h } = frame(cv, 0, sc.priceMax, (v) => v.toLocaleString("en-US"));
+  if (compare) {
+    ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.lineWidth = 2; ctx.strokeStyle = tok("--ink");
+    path(ctx, x, y, sc.close, idx, false);
+    const surface = tok("--surface");
+    for (const k of focusLast(active())) {
+      ctx.globalAlpha = focusKey && focusKey !== k ? 0.15 : 1;
+      ctx.fillStyle = tok(ruleColor(k));
+      for (const e of sc.rules[k].events) {
+        if (e.i > idx) break;
+        ctx.beginPath(); ctx.arc(x(e.i), y(e.price), radius(e) * 0.7, 0, Math.PI * 2);
+        ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = surface; ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+    cursorLine(ctx, x, h, idx, tok("--line"));
+    if (hoverIdx != null) cursorLine(ctx, x, h, hoverIdx, tok("--ink-3"));
+    ctx.beginPath(); ctx.arc(x(idx), y(sc.close[idx]), 3.5, 0, Math.PI * 2); ctx.fillStyle = tok("--ink"); ctx.fill();
+    return;
+  }
+  for (const p of R.pauses) {
+    if (p.start_i > idx) continue;
+    const x0 = x(p.start_i), x1 = x(Math.min(p.resume_i ?? sc.dates.length - 1, idx));
+    ctx.fillStyle = tok("--band"); ctx.fillRect(x0, M.t, x1 - x0, h - M.t - M.b);
+    if (x1 - x0 > 52) {
+      ctx.font = `600 11px ${tok("--f-display")}`; ctx.fillStyle = tok("--ink-2");
+      ctx.textAlign = "left"; ctx.textBaseline = "top";
+      ctx.fillText("Paused", x0 + 6, M.t + 6);
+    }
+  }
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = tok("--ink-3");
+  path(ctx, x, y, R.trigger, idx, true);
+  ctx.setLineDash([]); ctx.lineWidth = 2; ctx.strokeStyle = tok("--ink");
+  path(ctx, x, y, sc.close, idx, false);
+
+  const surface = tok("--surface"), s1 = tok("--s1");
+  for (const p of pulses) {
+    const age = (now - p.t) / 900;
+    if (age >= 1) continue;
+    ctx.globalAlpha = 1 - age; ctx.strokeStyle = s1; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x(p.i), y(sc.close[p.i]), p.r + 1 + age * 22, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  const done = R.events.filter((e) => e.i <= idx);
+  for (const e of done) {
+    ctx.beginPath(); ctx.arc(x(e.i), y(e.price), radius(e), 0, Math.PI * 2);
+    ctx.fillStyle = s1; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = surface; ctx.stroke();
+  }
+  const last = done.at(-1);
+  if (last) {
+    ctx.font = `600 12px ${tok("--f-display")}`; ctx.fillStyle = tok("--ink");
+    ctx.textBaseline = "top";
+    const lx = x(last.i), right = lx > canvases[cv.id].w * 0.75;
+    ctx.textAlign = right ? "right" : "left";
+    const what = last.units > 1 ? `${money(last.units * DATA.buy)} catch-up` : `Buy #${last.n}`;
+    const lbl = `${what} at ${price(last.price)}`, ly = Math.min(y(last.price) + radius(last) + 3, h - M.b - 16);
+    const lxo = lx + (right ? -1 : 1) * (radius(last) + 4);
+    ctx.lineWidth = 4; ctx.strokeStyle = surface; ctx.lineJoin = "round"; ctx.strokeText(lbl, lxo, ly);
+    ctx.fillText(lbl, lxo, ly);
+  }
+  cursorLine(ctx, x, h, idx, tok("--line"));
+  if (hoverIdx != null) cursorLine(ctx, x, h, hoverIdx, tok("--ink-3"));
+  ctx.beginPath(); ctx.arc(x(idx), y(sc.close[idx]), 3.5, 0, Math.PI * 2); ctx.fillStyle = tok("--ink"); ctx.fill();
+}
+
+// area grows with the amount: a single $1,000 buy is r=5
+const radius = (e) => 5 * Math.sqrt(Math.min(e.units, 36) ** 0.6);
+
+function drawValue() {
+  const cv = $("valueCv");
+  if (compare) {
+    const { ctx, x, y, w, h } = frame(cv, sc.retMin, sc.retMax, (v) => (Math.abs(v) < 1e-9 ? "0%" : pct(v, 0)));
+    ctx.strokeStyle = tok("--ink-3"); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(M.l, Math.round(y(0)) + 0.5); ctx.lineTo(w - M.r, Math.round(y(0)) + 0.5); ctx.stroke();
+    const lines = new Map([["lump", [lumpRet(), "--ink-3", true]], ...active().map((k) => [k, [sc.rules[k].series.rule.ret, ruleColor(k), false]])]);
+    ctx.lineJoin = "round"; ctx.lineCap = "round";
+    for (const k of focusLast([...lines.keys()])) {
+      const [arr, color, dashed] = lines.get(k);
+      ctx.globalAlpha = focusKey && focusKey !== k ? 0.2 : 1;
+      ctx.setLineDash(dashed ? [5, 4] : []); ctx.lineWidth = focusKey === k ? 3 : 2; ctx.strokeStyle = tok(color);
+      path(ctx, x, y, arr, idx, false);
+      if (arr[idx] != null) {
+        ctx.setLineDash([]);
+        ctx.beginPath(); ctx.arc(x(idx), y(arr[idx]), 4, 0, Math.PI * 2);
+        ctx.fillStyle = tok(color); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = tok("--surface"); ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
+    if (hoverIdx != null) cursorLine(ctx, x, h, hoverIdx, tok("--ink-3"));
+    return;
+  }
+  const { ctx, x, y, h } = frame(cv, 0, R.valueMax, (v) => "$" + (v >= 1000 ? (v / 1000).toLocaleString("en-US") + "k" : v));
+  ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.lineWidth = 2;
+  // draw the rule last so it sits on top
+  for (const s of [...strats()].reverse()) {
+    ctx.strokeStyle = tok(s.color);
+    path(ctx, x, y, R.series[s.key].val, idx, false);
+  }
+  for (const s of strats()) {
+    ctx.beginPath(); ctx.arc(x(idx), y(R.series[s.key].val[idx]), 4, 0, Math.PI * 2);
+    ctx.fillStyle = tok(s.color); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = tok("--surface"); ctx.stroke();
+  }
+  if (hoverIdx != null) cursorLine(ctx, x, h, hoverIdx, tok("--ink-3"));
+}
+
+function drawSide() {
+  $("nowDate").textContent = sc.dates[idx];
+  $("nowClose").textContent = `${sc.index} closed at ${price(sc.close[idx])}`;
+  const box = $("strats");
+  box.replaceChildren();
+  if (compare) {
+    const items = [...active().map((k) => ({ k, name: sc.rules[k].label, color: ruleColor(k), s: sc.rules[k].series.rule })),
+      { k: "lump", name: "Lump sum on day one", color: "--ink-3", dashed: true, s: sc.rules.dca.series.lump }];
+    const at = (it) => it.s.ret[idx];
+    items.sort((a, b) => (at(a) == null) - (at(b) == null) || (at(b) ?? 0) - (at(a) ?? 0));
+    for (const it of items) {
+      const row = document.createElement("div"); row.className = "strat";
+      const nm = document.createElement("span"); nm.className = "name"; nm.textContent = it.name;
+      const val = document.createElement("span"); val.className = "val"; val.textContent = at(it) == null ? "—" : pct(at(it));
+      const sub = document.createElement("span"); sub.className = "sub";
+      sub.textContent = it.k === "lump" ? "same % whatever the amount"
+        : at(it) == null ? "nothing bought yet" : `${money(it.s.val[idx])} from ${money(it.s.inv[idx])} put in`;
+      row.append(lineKey(it.color, it.dashed), nm, val, sub);
+      keyed(row, it.k);
+      box.append(row);
+    }
+    return;
+  }
+  for (const s of strats()) {
+    const d = R.series[s.key];
+    const row = document.createElement("div"); row.className = "strat";
+    const k = document.createElement("i"); k.className = "key"; k.style.borderColor = `var(${s.color})`;
+    const nm = document.createElement("span"); nm.className = "name"; nm.textContent = stratName(s);
+    const val = document.createElement("span"); val.className = "val"; val.textContent = money(d.val[idx]);
+    const sub = document.createElement("span"); sub.className = "sub"; sub.textContent = `${money(d.inv[idx])} put in so far`;
+    row.append(k, nm, val, sub);
+    box.append(row);
+  }
+
+  const done = R.events.filter((e) => e.i <= idx);
+  if (done.length !== shownBuys) {
+    const fresh = shownBuys >= 0 && done.length === shownBuys + 1 && playing;
+    shownBuys = done.length;
+    const log = $("log");
+    log.replaceChildren();
+    for (const e of [...done].reverse()) {
+      const li = document.createElement("li");
+      const top = document.createElement("div"); top.className = "top";
+      const a = document.createElement("span"); a.textContent = `#${e.n} ${sc.dates[e.i]}`;
+      const b = document.createElement("span"); b.textContent = `@ ${price(e.price)}`;
+      top.append(a, b);
+      const why = document.createElement("div"); why.className = "why";
+      why.textContent = `${money(e.units * DATA.buy)} · ${reason(e)} · avg cost ${price(e.avg)}`;
+      li.append(top, why);
+      if (fresh && e === done.at(-1) && !reduceMotion) li.className = "fresh";
+      log.append(li);
+    }
+    $("logEmpty").hidden = done.length > 0;
+  }
+}
+
+function reason(e) {
+  if (ruleKey === "dca") return "Regular monthly buy";
+  if (ruleKey === "bear31") {
+    const p = R.pauses.find((q) => q.resume_i === e.i);
+    if (!p) return "Regular monthly buy";
+    const own = e.units > p.skipped ? " plus this month" : "";
+    return `Catch-up: ${p.skipped} skipped months${own}. Paused ${sc.dates[p.start_i]}, 20% under the ${sc.dates[p.peak_i]} high of ${price(p.peak_price)}`;
+  }
+  if (ruleKey.startsWith("month")) {
+    return e.dip ? `${pct(e.refchg)} from this month's first close of ${price(e.ref)}`
+      : `No ${Math.round(R.step * 100)}% dip this month, bought on the last day`;
+  }
+  if (!e.dip) return "First buy on day one";
+  if (ruleKey === "ladder") return `Closed at or below ${price(e.trig)}, 10% under the last buy`;
+  if (ruleKey === "peak") return `${pct(e.dd)} from the high of ${price(e.high)}`;
+  return `Fell ${pct(e.chg)} in one day`;
+}
+
+function draw(now = performance.now()) { if (sc) { drawPrice(now); drawValue(); } }
+
+// ---------- playback ----------
+function setIdx(i, fromPlay) {
+  const prev = idx;
+  idx = Math.max(0, Math.min(sc.dates.length - 1, i));
+  if (!fromPlay) { pos = idx; pulses = []; }
+  else if (!compare) for (const e of R.events) if (e.i > prev && e.i <= idx && !reduceMotion) pulses.push({ i: e.i, r: radius(e), t: performance.now() });
+  $("scrub").value = idx;
+  drawSide();
+  draw();
+}
+function tick(t) {
+  const dt = Math.min(0.1, (t - lastT) / 1000); lastT = t;
+  if (playing) {
+    pos += dt * Number($("speed").value);
+    setIdx(Math.floor(pos), true);
+    if (idx >= sc.dates.length - 1) pause();
+  } else draw(t);
+  pulses = pulses.filter((p) => t - p.t < 900);
+  if (playing || pulses.length) requestAnimationFrame(tick);
+}
+function play() {
+  if (idx >= sc.dates.length - 1) setIdx(0);
+  playing = true; $("playBtn").textContent = "Pause";
+  lastT = performance.now(); requestAnimationFrame(tick);
+}
+function pause() { playing = false; $("playBtn").textContent = idx >= sc.dates.length - 1 ? "Replay" : "Play"; }
+
+$("playBtn").addEventListener("click", () => (playing ? pause() : play()));
+$("scrub").addEventListener("input", (ev) => { pause(); setIdx(Number(ev.target.value)); $("playBtn").textContent = "Play"; });
+$("crash").addEventListener("change", () => { fillStarts(); load("play"); });
+$("start").addEventListener("change", () => load("play"));
+
+// ---------- hover ----------
+function onHover(ev) {
+  const cv = ev.currentTarget, r = cv.getBoundingClientRect();
+  const pw = r.width - M.l - M.r;
+  const f = (ev.clientX - r.left - M.l) / pw;
+  if (f < 0 || f > 1) return offHover();
+  hoverIdx = Math.round(f * (sc.dates.length - 1));
+  const tip = $("tip");
+  tip.replaceChildren();
+  const d = document.createElement("div"); d.className = "d"; d.textContent = sc.dates[hoverIdx];
+  tip.append(d);
+  const rows = [["Close", price(sc.close[hoverIdx])]];
+  if (compare) {
+    if (hoverIdx <= idx) {
+      for (const k of active()) {
+        const v = sc.rules[k].series.rule.ret[hoverIdx];
+        rows.push([RULE_SHORT[k], v == null ? "—" : pct(v)]);
+      }
+      rows.push(["Lump sum", pct(lumpRet()[hoverIdx])]);
+    }
+  } else {
+    if (R.trigger[hoverIdx] != null) rows.push(["Next trigger", price(R.trigger[hoverIdx])]);
+    if (hoverIdx <= idx) for (const s of strats()) rows.push([stratName(s), money(R.series[s.key].val[hoverIdx])]);
+  }
+  for (const [k, v] of rows) {
+    const row = document.createElement("div"); row.className = "row";
+    const a = document.createElement("span"); a.textContent = k;
+    const b = document.createElement("b"); b.textContent = v;
+    row.append(a, b); tip.append(row);
+  }
+  tip.hidden = false;
+  const host = $("priceCv").closest(".charts").getBoundingClientRect();
+  const px = ev.clientX - host.left, tw = tip.offsetWidth;
+  tip.style.left = (px + 14 + tw > host.width ? px - 14 - tw : px + 14) + "px";
+  tip.style.top = (ev.clientY - host.top + 12) + "px";
+  if (!playing) draw();
+}
+function offHover() { hoverIdx = null; $("tip").hidden = true; if (!playing) draw(); }
+for (const id of ["priceCv", "valueCv"]) {
+  $(id).addEventListener("pointermove", onHover);
+  $(id).addEventListener("pointerleave", offHover);
+}
+
+// ---------- pause reality check ----------
+const mo = (v) => `${v.toFixed(1)} months`;
+
+function renderPauseCheck(months) {
+  const pc = DATA.pauseCheck, L = pc.byLength[months];
+  const done = L.pauses.filter((p) => p.vs != null);
+  const helped = done.filter((p) => p.vs < 0).length;
+  const idle = L.pauses.filter((p) => p.skipped === 0).length;
+  const row = pc.lengths.find((l) => l.months === months);
+  $("checkEyebrow").textContent = `Reality check · S&P 500 ${pc.first} to ${pc.last}`;
+  $("checkTitle").textContent = `Does the ${months}-month pause work outside 1929 and 2000?`;
+  $("barsTitle").textContent = `Each ${months}-month pause: catch-up price vs what monthly DCA paid`;
+  let lede = `Across every crash since 1928, the ${months}-month pause bought the skipped months cheaper than plain DCA in ${helped} of ${done.length}`;
+  lede += idle ? `, and ${idle} more skipped nothing because the 20% drop came after the pause had run out. ` : ". ";
+  lede += `Over the whole history it ends ${pct(row.vs[0])} against plain DCA; starting in 1954, after the 1929 high was regained, it ends ${pct(row.vs[1])}.`;
+  $("checkLede").textContent = lede;
+
+  for (const b of $("lenPick").children) b.setAttribute("aria-pressed", String(Number(b.dataset.months) === months));
+  for (const tr of $("lenBody").children) tr.classList.toggle("current", Number(tr.dataset.months) === months);
+
+  // one scale across every pause length, so switching lengths doesn't rescale the bars
+  const all = Object.values(pc.byLength).flatMap((x) => x.pauses).filter((p) => p.vs != null).map((p) => p.vs);
+  const lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+  const zero = (-lo / (hi - lo)) * 100;
+  const bars = $("pauseBars");
+  bars.replaceChildren();
+  for (const p of L.pauses) {
+    const r = document.createElement("div"); r.className = "bar-row"; r.tabIndex = 0;
+    const lbl = document.createElement("span"); lbl.className = "bar-lbl"; lbl.textContent = `${p.peak.slice(0, 4)} peak`;
+    const track = document.createElement("span"); track.className = "bar-track";
+    const z = document.createElement("span"); z.className = "bar-zero"; z.style.left = zero + "%";
+    track.append(z);
+    const val = document.createElement("span"); val.className = "bar-val";
+    const sub = document.createElement("span"); sub.className = "bar-sub";
+    const fell = `Fell 20% ${mo(p.peak_to_drop_mo)} after the ${p.peak} high`;
+    if (p.vs != null) {
+      const bar = document.createElement("span");
+      const w = (Math.abs(p.vs) / (hi - lo)) * 100;
+      bar.className = "bar " + (p.vs < 0 ? "neg" : "pos");
+      bar.style.left = (p.vs < 0 ? zero - w : zero) + "%"; bar.style.width = w + "%";
+      track.append(bar);
+      val.textContent = pct(p.vs);
+      sub.textContent = `${fell}, so the pause lasted ${mo(p.drop_to_resume_mo)} (${p.skipped} months skipped). ` +
+        `Caught up ${p.resume} at ${price(p.resume_price)}; DCA paid ${price(p.dca_cost)} for those months.`;
+    } else if (p.resume == null) {
+      val.textContent = "n/a";
+      sub.textContent = `${fell}. Still paused when the data ends.`;
+    } else {
+      val.textContent = "0 skipped";
+      sub.textContent = `${fell}, after the ${months}-month pause had already run out, so nothing was skipped. Same as DCA.`;
+    }
+    r.append(lbl, track, val, sub);
+    const notes = [];
+    if (p.next_peak) notes.push(`The next all-time high (${p.next_peak}) came before this catch-up, so the catch-up landed inside the next crash.`);
+    if (p.peak_in_prev_pause) notes.push(`This high came during the previous pause: ${p.pre_drop_in_prev} of its ${p.pre_drop_months} months before the 20% drop were skipped by that pause and bought in its catch-up. This pause began ${p.days_after_prev_resume} days after that catch-up.`);
+    for (const t of notes) {
+      const n = document.createElement("span"); n.className = "bar-note";
+      const b = document.createElement("b"); b.textContent = "Overlap: ";
+      n.append(b, t); r.append(n);
+    }
+    r.setAttribute("aria-label", `${lbl.textContent}: ${val.textContent}. ${sub.textContent} ${notes.join(" ")}`);
+    bars.append(r);
+  }
+  const foot = $("absorbedNote");
+  foot.hidden = L.absorbed.length === 0;
+  foot.textContent = L.absorbed.map((a) => a.inside_peak
+    ? `The crash from the ${a.peak} high has no row: it happened entirely inside the ${a.inside_peak.slice(0, 4)} pause, and the market never fell 20% below that high again after buying resumed.`
+    : `The crash from the ${a.peak} high got no pause of its own.`).join(" ");
+}
+
+(function setupPauseCheck() {
+  const pc = DATA.pauseCheck;
+  const head = document.createElement("tr");
+  for (const t of ["Pause", ...pc.starts.map((s, i) => (i === 0 ? "All years" : `From ${s.slice(0, 4)}`))]) {
+    const th = document.createElement("th"); th.textContent = t; head.append(th);
+  }
+  $("lenHead").append(head);
+  for (const l of pc.lengths) {
+    const b = document.createElement("button");
+    b.type = "button"; b.dataset.months = l.months; b.textContent = l.months;
+    b.addEventListener("click", () => renderPauseCheck(l.months));
+    $("lenPick").append(b);
+    const tr = document.createElement("tr");
+    tr.dataset.months = l.months;
+    tr.addEventListener("click", () => renderPauseCheck(l.months));
+    for (const c of [`${l.months} months`, ...l.vs.map((v) => pct(v))]) {
+      const td = document.createElement("td"); td.textContent = c; tr.append(td);
+    }
+    $("lenBody").append(tr);
+  }
+  renderPauseCheck(pc.months);
+})();
+
+// ---------- start earlier: each rule's result by start year ----------
+const SC_METRIC = { edge: ["vs same money, monthly", 1], ret: ["total return", 1], xirr: ["XIRR per year", 2] };
+const scHidden = new Set();
+let scMetric = "edge";
+
+function renderStartCompare() {
+  const crash = $("scCrash").value, c = DATA.startCompare[crash];
+  const keys = RULE_ORDER.filter((k) => c.rules[k].edge.some((v) => v != null));
+  const shown = keys.filter((k) => !scHidden.has(k));
+  const [mName, digits] = SC_METRIC[scMetric];
+  for (const b of $("scMetric").children) b.setAttribute("aria-pressed", String(b.dataset.metric === scMetric));
+  $("scEyebrow").textContent = `Start date · ${c.era} · ${c.index} · every run ends ${c.end}`;
+  const yr = (y) => (y === 0 ? "at the peak" : `${y} yr before`);
+
+  const lad = c.rules.ladder, dca = c.rules.dca;
+  const thin = c.years.map((y, i) => [y, lad.invested[i], dca.invested[i]]).filter(([, a, b]) => a != null && a <= 0.05 * b);
+  $("scLede").textContent =
+    `Each run starts some years before the ${c.peak} peak and ends on ${c.end}, so the crash lands in year 0, 1, 2… of your investing. ` +
+    `Normal DCA's own total return goes from ${pct(dca.ret[0], 0)} starting at the peak to ${pct(dca.ret.at(-1), 0)} starting ${c.years.at(-1)} years before. ` +
+    (thin.length ? `Read the ladder (10% below my last buy) with care: from ${thin[0][0]} years before, it bought only ` +
+      `${money(Math.min(...thin.map((t) => t[1])))} to ${money(Math.max(...thin.map((t) => t[1])))} in total while normal DCA put in up to ` +
+      `${money(Math.max(...thin.map((t) => t[2])))}. Its high numbers come from a small sum invested early, with nearly all your money left in cash.` : "");
+
+  // legend toggles
+  const leg = $("scLegend");
+  leg.replaceChildren();
+  for (const k of keys) {
+    const b = document.createElement("button");
+    b.type = "button"; b.setAttribute("aria-pressed", String(!scHidden.has(k)));
+    b.append(lineKey(ruleColor(k), false), c.rules[k].label);
+    b.addEventListener("click", () => {
+      if (scHidden.has(k)) scHidden.delete(k);
+      else if (shown.length > 1) scHidden.add(k);  // keep at least one rule in the chart and table
+      renderStartCompare();
+    });
+    leg.append(b);
+  }
+
+  // chart: x = years before the peak, y = chosen metric
+  const svg = $("scChart"), NS = "http://www.w3.org/2000/svg";
+  svg.replaceChildren();
+  const W = 900, H = 300, m = { l: 62, r: 16, t: 14, b: 34 };
+  const vals = shown.flatMap((k) => c.rules[k][scMetric]).filter((v) => v != null);
+  const { ticks, bottom, top } = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals, 0.01), 5);
+  const xMax = c.years.at(-1);
+  const X = (y) => m.l + (y / xMax) * (W - m.l - m.r), Y = (v) => m.t + (H - m.t - m.b) * (1 - (v - bottom) / (top - bottom));
+  const el = (tag, attrs, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+    if (text != null) e.textContent = text;
+    svg.append(e);
+    return e;
+  };
+  for (const t of ticks) {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), stroke: Math.abs(t) < 1e-9 ? "var(--ink-3)" : "var(--grid)", "stroke-width": 1 });
+    el("text", { x: m.l - 8, y: Y(t) + 4, "text-anchor": "end" }, Math.abs(t) < 1e-9 ? "0%" : pct(t, 0));
+  }
+  for (const y of c.years) el("text", { x: X(y), y: H - m.b + 18, "text-anchor": "middle" }, y === 0 ? "peak" : `${y}y`);
+  el("text", { x: W - m.r, y: H - 2, "text-anchor": "end" }, "years before the peak you started →");
+  for (const k of shown) {
+    const r = c.rules[k], color = `var(${ruleColor(k)})`;
+    let d = "";
+    c.years.forEach((y, i) => { const v = r[scMetric][i]; if (v != null) d += `${d && r[scMetric][i - 1] != null ? "L" : "M"}${X(y)},${Y(v)}`; });
+    el("path", { d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" });
+    c.years.forEach((y, i) => {
+      const v = r[scMetric][i];
+      if (v == null) return;
+      const dot = el("circle", { cx: X(y), cy: Y(v), r: 4, fill: color, stroke: "var(--surface)", "stroke-width": 1.5 });
+      const t = document.createElementNS(NS, "title");
+      t.textContent = `${r.label}, starting ${yr(y)} (${c.starts[i]}): ${pct(v, digits)} ${mName}. ${r.buy_days[i]} buy days, ${money(r.invested[i])} put in.`;
+      dot.append(t);
+    });
+  }
+
+  // table: rows = rules, columns = start years (header links replay that start)
+  const head = document.createElement("tr");
+  const th0 = document.createElement("th"); th0.textContent = `Rule · ${mName}`; head.append(th0);
+  c.years.forEach((y, i) => {
+    const th = document.createElement("th");
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = y === 0 ? "Peak" : `${y} yr`;
+    b.title = `Replay starting ${c.starts[i]}`;
+    b.addEventListener("click", () => {
+      $("crash").value = crash; fillStarts(); $("start").value = `${crash}-${y}y`;
+      load("play");
+      window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+    });
+    th.append(b);
+    head.append(th);
+  });
+  $("scHead").replaceChildren(head);
+  const body = $("scBody");
+  body.replaceChildren();
+  for (const k of shown) {
+    const r = c.rules[k], tr = document.createElement("tr");
+    const td0 = document.createElement("td"); td0.append(lineKey(ruleColor(k), false), r.label); tr.append(td0);
+    c.years.forEach((y, i) => {
+      const td = document.createElement("td"), v = r[scMetric][i];
+      td.append(v == null ? "—" : pct(v, digits));
+      const sub = document.createElement("span"); sub.className = "sub";
+      sub.textContent = v == null ? "never bought" : `${r.buy_days[i]} buys · ${money(r.invested[i])}`;
+      td.append(sub);
+      tr.append(td);
+    });
+    body.append(tr);
+  }
+  $("scNote").textContent =
+    `Start dates: ${c.years.map((y, i) => `${y === 0 ? "peak" : y + " yr"} ${c.starts[i]}`).join(", ")}. ` +
+    `"vs same money, monthly" compares a rule's final value with putting its own total in evenly every month over the same run; ` +
+    `normal DCA is 0% by definition. Each cell's second line is how many days the rule bought and how much it put in. ` +
+    `The rule buttons above filter both the chart and this table. Click a column heading to replay that start above. Computed in export_animation.py.`;
+}
+
+(function setupStartCompare() {
+  for (const b of $("scMetric").children) b.addEventListener("click", () => { scMetric = b.dataset.metric; renderStartCompare(); });
+  $("scCrash").value = "dotcom_nasdaq";
+  $("scCrash").addEventListener("change", renderStartCompare);
+  renderStartCompare();
+})();
+
+// ---------- lump sum: at once vs spread ----------
+const pct0 = (v) => Math.round(v * 100) + "%";
+let lsSet = "price";
+
+function svgEl(svg, tag, attrs, text) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [a, v] of Object.entries(attrs)) e.setAttribute(a, v);
+  if (text != null) e.textContent = text;
+  svg.append(e);
+  return e;
+}
+function tableRows(headId, bodyId, head, rows) {
+  const tr = document.createElement("tr");
+  for (const h of head) { const th = document.createElement("th"); th.textContent = h; tr.append(th); }
+  $(headId).replaceChildren(tr);
+  $(bodyId).replaceChildren(...rows.map((cells) => {
+    const r = document.createElement("tr");
+    for (const c of cells) {
+      const td = document.createElement("td");
+      if (Array.isArray(c)) {  // [main, sub]
+        td.append(c[0]);
+        const sub = document.createElement("span"); sub.className = "sub"; sub.textContent = c[1];
+        td.append(sub);
+      } else td.textContent = c;
+      r.append(td);
+    }
+    return r;
+  }));
+}
+
+function renderLumpSpread() {
+  const L = DATA.lumpSpread, D = L.datasets[lsSet], yrs = L.horizon / 12;
+  for (const b of $("lsData").children) b.setAttribute("aria-pressed", String(b.dataset.set === lsSet));
+  const r12 = D.rows.find((r) => r.n === 12), i12 = L.spreads.indexOf(12);
+  const topPeak = L.peaks["0"].reduce((a, b) => (b.vs[i12] > a.vs[i12] ? b : a));
+  $("lsEyebrow").textContent = `Lump sum · ${D.label} · start months from ${D.first}`;
+  $("lsLede").textContent =
+    `You have a lump sum and keep adding ${money(DATA.buy)} a month. Both plans add that same ${money(DATA.buy)}; they differ only in how the lump goes in: ` +
+    `all on day one, or as an extra amount each month until it is used up. Across ${r12.starts} start months, investing at once beat spreading over 12 months ` +
+    `in ${pct0(r12.at_once_wins)} of them, and the median 12-month spread ended ${pct(r12.median)} on the lump. ` +
+    `Spreading paid off when you started near a top: from the ${topPeak.label} peak, a 12-month spread came out ${pct(topPeak.vs[i12])} ahead.`;
+
+  // chart: median and 10th-90th band by spread length
+  const svg = $("lsChart");
+  svg.replaceChildren();
+  const W = 600, H = 300, m = { l: 56, r: 12, t: 12, b: 36 };
+  const vals = D.rows.flatMap((r) => [r.p10, r.p90]);
+  const { ticks, bottom, top } = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals), 5);
+  const nMax = L.spreads.at(-1);
+  const X = (n) => m.l + (n / nMax) * (W - m.l - m.r), Y = (v) => m.t + (H - m.t - m.b) * (1 - (v - bottom) / (top - bottom));
+  for (const t of ticks) {
+    svgEl(svg, "line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), stroke: Math.abs(t) < 1e-9 ? "var(--ink-3)" : "var(--grid)" });
+    svgEl(svg, "text", { x: m.l - 8, y: Y(t) + 4, "text-anchor": "end" }, Math.abs(t) < 1e-9 ? "0%" : pct(t, 0));
+  }
+  for (const n of [1, 12, 24, 36, 48, 60]) {
+    svgEl(svg, "text", { x: X(n), y: H - m.b + 18, "text-anchor": n === nMax ? "end" : n === 1 ? "start" : "middle" }, n === 1 ? "at once" : `${n} mo`);
+  }
+  svgEl(svg, "text", { x: W - m.r, y: H - 2, "text-anchor": "end" }, "months the lump is spread over →");
+  svgEl(svg, "text", { x: m.l + 6, y: Y(top) + 12 }, "spreading ahead ↑");
+  svgEl(svg, "text", { x: m.l + 6, y: Y(bottom) - 6 }, "investing at once ahead ↓");
+  const pts = [{ n: 1, median: 0, p10: 0, p90: 0 }, ...D.rows];  // spreading over 1 month is investing at once
+  svgEl(svg, "path", { d: "M" + pts.map((r) => `${X(r.n)},${Y(r.p90)}`).join("L") + "L" + [...pts].reverse().map((r) => `${X(r.n)},${Y(r.p10)}`).join("L") + "Z",
+    fill: "var(--ls-band)", stroke: "none" });
+  svgEl(svg, "path", { d: "M" + pts.map((r) => `${X(r.n)},${Y(r.median)}`).join("L"), fill: "none", stroke: "var(--s1)", "stroke-width": 2 });
+  for (const r of D.rows) {
+    const c = svgEl(svg, "circle", { cx: X(r.n), cy: Y(r.median), r: 4, fill: "var(--s1)", stroke: "var(--surface)", "stroke-width": 1.5 });
+    svgEl(c, "title", {}, `Spread over ${r.n} months: median ${pct(r.median)} on the lump, 10th to 90th percentile ${pct(r.p10)} to ${pct(r.p90)}. ` +
+      `Investing at once won in ${pct0(r.at_once_wins)} of ${r.starts} start months.`);
+  }
+
+  tableRows("lsRowsHead", "lsRowsBody", ["Spread over", "At once won", "Median", "10th–90th pct", "Best / worst for spreading"],
+    D.rows.map((r) => [`${r.n} months`, pct0(r.at_once_wins), pct(r.median), `${pct(r.p10)} to ${pct(r.p90)}`,
+      [`${pct(r.best)} / ${pct(r.worst)}`, `from ${r.best_from} / ${r.worst_from}`]]));
+  renderLumpPeaks();
+
+  const G = D.grid;
+  $("lsGridTitle").textContent = `Whole portfolio after ${yrs} years: lump plus ${money(DATA.buy)} a month, the lump spread as an extra amount each month`;
+  $("lsGridHelp").textContent =
+    `Each cell: the median result of spreading compared with investing the lump at once, across ${G.starts} start months (${G.first} to ${G.last}). ` +
+    `Below it: how often spreading won, and how many months the lump took to use up.`;
+  tableRows("lsGridHead", "lsGridBody", ["Lump sum", ...L.extras.map((x) => `+${money(x)} / month`)],
+    G.cells.map((row, i) => [money(L.lumps[i]), ...row.map((c) => [pct(c.median),
+      `won ${pct0(c.spread_wins)} · ${c.months} mo${c.months > L.horizon ? " †" : ""}`])]));
+  $("lsNote").textContent =
+    `† Takes longer than ${yrs} years to use up the lump, so part of it is still cash at the end. ` +
+    `On the lump itself the result depends only on how many months it is spread over, not its size: spreading wins when the average price paid ` +
+    `during those months is below day one's. A bigger lump next to the same ${money(DATA.buy)} a month makes the choice matter more for the whole portfolio. ` +
+    `Cash waiting to be invested earns 0% here; interest would help spreading a little. Start months overlap, so they are not independent samples. ` +
+    `The dividend series starts in 1988. Computed in lump_vs_spread.py.`;
+}
+function renderLumpPeaks() {
+  const L = DATA.lumpSpread, lead = Number($("lsLead").value), rows = L.peaks[lead], i12 = L.spreads.indexOf(12);
+  $("lsPeakTitle").textContent = lead === 0 ? "Starting on a crash peak day (S&P price only, NASDAQ)"
+    : `Starting ${lead} months before a crash peak (S&P price only, NASDAQ)`;
+  const ok = rows.filter((p) => p.vs);
+  const ahead = ok.filter((p) => p.vs[i12] > 0).length;
+  $("lsPeakHelp").textContent = `The lump arrives on the first trading day ${lead === 0 ? "of the peak" : `${lead} months before the peak`}; ` +
+    `spread buys follow on each next month's first trading day. A 12-month spread came out ahead in ${ahead} of ${ok.length} crashes` +
+    (ok.length < rows.length ? `; the data does not reach back far enough for ${rows.length - ok.length}.` : ".");
+  tableRows("lsPeakHead", "lsPeakBody", ["Lump arrived", ...L.spreads.map((n) => `${n} mo`)],
+    rows.map((p) => p.vs ? [[p.label, `${p.start} (peak ${p.day})`], ...p.vs.map((v) => pct(v))]
+      : [[p.label, `no data that far before the ${p.day} peak`], ...L.spreads.map(() => "—")]));
+}
+for (const k of DATA.lumpSpread.peakLeads) {
+  const o = document.createElement("option");
+  o.value = k; o.textContent = k === 0 ? "On the peak day" : `${k} months before the peak${k % 12 === 0 ? ` (${k / 12} yr)` : ""}`;
+  $("lsLead").append(o);
+}
+$("lsLead").addEventListener("change", renderLumpPeaks);
+for (const b of $("lsData").children) b.addEventListener("click", () => { lsSet = b.dataset.set; renderLumpSpread(); });
+renderLumpSpread();
+
+// ---------- normal DCA by date of the month ----------
+const ord = (n) => n + (n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th");
+const pp = (v) => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(2) + "%";  // values already in percent
+
+let rankKey = "value";
+const rankWindows = Object.keys(DATA.dateRank).map(Number).sort((x, y) => x - y);
+
+function renderDateRank() {
+  const dr = DATA.dateRank[rankWindows[Number($("rankYears").value)]];
+  $("rankYearsLbl").textContent = `Last ${dr.years} years`;
+  $("rankYears").setAttribute("aria-valuetext", `last ${dr.years} years`);
+
+  const byValue = [...dr.rows].sort((a, b) => a.rank - b.rank);
+  const best = byValue[0], worst = byValue.at(-1), d26 = dr.rows.find((r) => r.date === 26);
+  const cheapest = dr.rows.find((r) => r.vs_month_rank === 1);
+  $("rankEyebrow").textContent = `Normal DCA · S&P 500 ${dr.first} to ${dr.last}`;
+  $("rankTitle").textContent = `Which date of the month to buy on, last ${dr.years} years`;
+  $("rankLede").textContent =
+    `${money(DATA.buy)} on the same date every month for ${dr.months} months (${money(best.invested)} in total). ` +
+    `Buying on the ${ord(best.date)} ended highest at ${money(best.value)}; the ${ord(worst.date)} ended lowest, ${pp(worst.vs_best)} behind. ` +
+    `The 26th ranked ${d26.rank} of 31. Measured against the surrounding month's prices, which removes the head start early dates get from investing sooner, ` +
+    `the cheapest date was the ${ord(cheapest.date)} and the 26th ranked ${d26.vs_month_rank}.`;
+  $("rankNote").textContent =
+    `A date that falls on a weekend or holiday buys on the next trading day; the 29th to 31st buy on the month's last trading day when the month is shorter. ` +
+    `"Price vs surrounding month" is the close against the average of the 21 trading days around it, 10% trimmed mean over ${dr.vs_month_months} months ` +
+    `(the last month has no full window yet). Price index, no dividends. Computed in date_rank.py.`;
+
+  const rankOf = rankKey === "value" ? (r) => r.rank : (r) => r.vs_month_rank;
+  const rows = [...dr.rows].sort((a, b) => rankOf(a) - rankOf(b));
+  for (const b of $("rankBy").children) b.setAttribute("aria-pressed", String(b.dataset.key === rankKey));
+  const maxGap = Math.max(...dr.rows.map((r) => -r.vs_best));
+  const body = $("rankBody");
+  body.replaceChildren();
+  for (const r of rows) {
+    const tr = document.createElement("tr");
+    if (rankOf(r) === 1) tr.className = "current";
+    const cells = [String(rankOf(r)), ord(r.date), money(r.value), null, price(r.avg_cost), `${pp(r.vs_month)} (#${r.vs_month_rank})`];
+    cells.forEach((c, i) => {
+      const td = document.createElement("td");
+      if (i === 1) td.className = "date-cell";
+      if (i === 3) {
+        td.append(r.vs_best === 0 ? "best" : pp(r.vs_best));
+        const bar = document.createElement("span"); bar.className = "gap";
+        bar.style.width = (maxGap ? (-r.vs_best / maxGap) * 60 : 0) + "px";
+        td.append(bar);
+      } else td.textContent = c;
+      tr.append(td);
+    });
+    body.append(tr);
+  }
+}
+
+(function setupDateRank() {
+  $("rankYears").max = rankWindows.length - 1;
+  for (const [i, y] of rankWindows.entries()) {
+    const o = document.createElement("option"); o.value = i; o.label = `${y}`; $("rankYearsTicks").append(o);
+    const t = document.createElement("span"); t.textContent = `${y} yr`; $("rankYearsNames").append(t);
+  }
+  $("rankYears").addEventListener("input", renderDateRank);
+  for (const b of $("rankBy").children) b.addEventListener("click", () => { rankKey = b.dataset.key; renderDateRank(); });
+  renderDateRank();
+})();
+
+// ---------- boot ----------
+new ResizeObserver(() => { sizeCanvas($("priceCv")); sizeCanvas($("valueCv")); if (sc) draw(); }).observe($("priceCv"));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw());
+new MutationObserver(() => draw()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+sizeCanvas($("priceCv")); sizeCanvas($("valueCv"));
+$("crash").value = "depression_sp500";
+fillStarts();
+$("start").value = "depression_sp500-0y";
+load(reduceMotion ? "end" : "play");
+</script>
