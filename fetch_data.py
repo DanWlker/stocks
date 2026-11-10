@@ -1,5 +1,7 @@
-"""Download daily index data for the Great Depression and dot-com eras into data/."""
+"""Download daily index data from Yahoo Finance, and monthly inflation, interest-rate and valuation data
+(FRED, Robert Shiller) into data/."""
 
+import urllib.request
 from pathlib import Path
 
 import pandas as pd
@@ -21,6 +23,17 @@ SERIES = [
     ("nikkei225", "^N225", "1965-01-01", "2026-10-31"),
 ]
 
+FRED = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={}"
+# (file name, url), saved as downloaded; monthly.py reads them
+RAW = [
+    # S&P price, dividends, CPI, 10-year yield and CAPE, monthly from 1871 (the file ends September 2023)
+    ("shiller_ie_data.xls", "http://www.econ.yale.edu/~shiller/data/ie_data.xls"),
+    ("fred_CPIAUCNS.csv", FRED.format("CPIAUCNS")),  # consumer prices, from 1913
+    ("fred_TB3MS.csv", FRED.format("TB3MS")),  # 3-month Treasury bill rate, from 1934
+    ("fred_M1329AUSM193NNBR.csv", FRED.format("M1329AUSM193NNBR")),  # NBER short-term government rate, 1920-1934
+    ("fred_GS10.csv", FRED.format("GS10")),  # 10-year Treasury yield, from 1953
+]
+
 out = Path(__file__).parent / "data"
 out.mkdir(exist_ok=True)
 
@@ -38,3 +51,9 @@ for name, ticker, start, end in SERIES:
         df = df[["Close"]]
     df.to_csv(out / f"{name}.csv")
     print(f"{name}: {ticker} {len(df)} rows {df.index[0]} -> {df.index[-1]}")
+
+for name, url in RAW:
+    with urllib.request.urlopen(url, timeout=120) as r:
+        body = r.read()
+    (out / name).write_bytes(body)
+    print(f"{name}: {len(body):,} bytes from {url}")

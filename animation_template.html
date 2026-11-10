@@ -124,6 +124,12 @@ tr.best td { background: var(--hover); }
 tr.current td { background: var(--hover); font-weight: 600; }
 .ls-stack { display: grid; gap: 18px; }
 .ls-chart { max-width: 760px; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.toc ol { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; margin: 0; padding: 0; }
+.toc a { color: var(--ink-2); text-underline-offset: 3px; }
+.toc a:hover { color: var(--ink); }
+.extra { display: grid; gap: 20px; }
+.extra h3 { font-size: 15px; font-weight: 700; margin: 18px 0 6px; }
 .load-err { margin: 0; padding: 10px 14px; border: 1px solid var(--s2); border-radius: 8px; color: var(--ink); background: var(--surface); }
 .sc-controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; margin: 0 0 14px; }
 .sc-chart { width: 100%; height: auto; display: block; }
@@ -149,6 +155,7 @@ tr.current td { background: var(--hover); font-weight: 600; }
     <h1>Buying the Crash</h1>
     <p>Watch each rule buy into the 1929 and 2000 crashes, day by day. The other two lines put the same total money in all at once on day one, or split it evenly across every month.</p>
   </header>
+  <nav class="toc" aria-label="On this page"><span class="label">On this page</span><ol id="toc"></ol></nav>
 
   <div class="controls">
     <div class="field"><label class="label" for="crash">Crash</label><select id="crash"></select></div>
@@ -174,7 +181,7 @@ tr.current td { background: var(--hover); font-weight: 600; }
   </div>
 
   <p class="load-err" id="loadErr" role="alert" hidden></p>
-  <div class="main">
+  <div class="main" id="replay" data-toc="Replay a crash">
     <div class="charts">
       <div class="panel">
         <div class="chart-head">
@@ -224,7 +231,7 @@ tr.current td { background: var(--hover); font-weight: 600; }
     <p class="note" id="compareNote" hidden>Rules put in different amounts at different times, so compare them by return, not dollars. "vs same money, monthly" compares each rule with putting its own total in evenly every month over the same period: the fairest single number here. XIRR ignores time money spends waiting in cash, so it flatters rules that wait. The chart's return line starts at each rule's first buy.</p>
     <p class="note" id="sumNote">Every number on this page was computed in Python (<span class="mono">export_animation.py</span>) from Yahoo Finance daily closes. Prices only, no dividends. Before 1957 the S&amp;P series is the 90-stock index. XIRR is the annual return that accounts for when each dollar went in.</p>
   </div>
-  <section class="panel check" aria-labelledby="checkTitle">
+  <section class="panel check" id="pause-check" data-toc="The 31-month pause" aria-labelledby="checkTitle">
     <div class="label" id="checkEyebrow">Reality check</div>
     <h2 class="sec-title" id="checkTitle">Does the pause work outside 1929 and 2000?</h2>
     <p class="lede" id="checkLede"></p>
@@ -257,7 +264,7 @@ tr.current td { background: var(--hover); font-weight: 600; }
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="scTitle">
+  <section class="panel" id="start-date" data-toc="Starting earlier" aria-labelledby="scTitle">
     <div class="label" id="scEyebrow">Start date</div>
     <h2 class="sec-title" id="scTitle">What if the crash comes later in your investing?</h2>
     <p class="lede" id="scLede"></p>
@@ -282,7 +289,7 @@ tr.current td { background: var(--hover); font-weight: 600; }
     <p class="note" id="scNote"></p>
   </section>
 
-  <section class="panel check" aria-labelledby="lsTitle">
+  <section class="panel check" id="lump-sum" data-toc="Lump sum" aria-labelledby="lsTitle">
     <div class="label" id="lsEyebrow">Lump sum</div>
     <h2 class="sec-title" id="lsTitle">Got a lump sum? Invest it at once, or spread it?</h2>
     <p class="lede" id="lsLede"></p>
@@ -324,7 +331,7 @@ tr.current td { background: var(--hover); font-weight: 600; }
     <p class="note" id="lsNote"></p>
   </section>
 
-  <section class="panel" aria-labelledby="rankTitle">
+  <section class="panel" id="buy-date" data-toc="Best date to buy" aria-labelledby="rankTitle">
     <div class="label" id="rankEyebrow">Normal DCA</div>
     <h2 class="sec-title" id="rankTitle">Which date of the month to buy on</h2>
     <p class="lede" id="rankLede"></p>
@@ -350,6 +357,8 @@ tr.current td { background: var(--hover); font-weight: 600; }
     </div>
     <p class="note" id="rankNote"></p>
   </section>
+
+  <div id="extra" class="extra"></div>
 </div>
 
 <script>
@@ -1246,6 +1255,60 @@ function renderDateRank() {
   for (const b of $("rankBy").children) b.addEventListener("click", () => { rankKey = b.dataset.key; renderDateRank(); });
   renderDateRank();
 })();
+
+// ---------- wider investigations: sections built in Python (report.py) ----------
+function buildTable(head, rows, highlight) {
+  const t = document.createElement("table");
+  t.className = "sc-table";
+  const thead = document.createElement("thead"), hr = document.createElement("tr");
+  for (const h of head) { const th = document.createElement("th"); th.textContent = h; hr.append(th); }
+  thead.append(hr);
+  const tbody = document.createElement("tbody");
+  rows.forEach((cells, i) => {
+    const tr = document.createElement("tr");
+    if (highlight.includes(i)) tr.className = "current";
+    for (const c of cells) {
+      const td = document.createElement("td");
+      if (Array.isArray(c)) {  // [main, sub]
+        td.append(c[0]);
+        const sub = document.createElement("span"); sub.className = "sub"; sub.textContent = c[1];
+        td.append(sub);
+      } else td.textContent = c;
+      tr.append(td);
+    }
+    tbody.append(tr);
+  });
+  t.append(thead, tbody);
+  return t;
+}
+
+(function renderExtra() {
+  for (const sec of DATA.extra) {
+    const el = document.createElement("section");
+    el.className = "panel"; el.id = sec.id; el.dataset.toc = sec.eyebrow;
+    el.setAttribute("aria-labelledby", `${sec.id}-title`);
+    const eb = document.createElement("div"); eb.className = "label"; eb.textContent = sec.eyebrow;
+    const h2 = document.createElement("h2"); h2.className = "sec-title"; h2.id = `${sec.id}-title`; h2.textContent = sec.title;
+    const lede = document.createElement("p"); lede.className = "lede"; lede.textContent = sec.lede;
+    el.append(eb, h2, lede);
+    for (const t of sec.tables) {
+      const h3 = document.createElement("h3"); h3.textContent = t.title;
+      const wrap = document.createElement("div"); wrap.className = "table-wrap";
+      wrap.append(buildTable(t.head, t.rows, t.highlight));
+      el.append(h3, wrap);
+      if (t.note) { const n = document.createElement("p"); n.className = "check-foot"; n.style.margin = "6px 0 0"; n.textContent = t.note; el.append(n); }
+    }
+    if (sec.note) { const n = document.createElement("p"); n.className = "note"; n.textContent = sec.note; el.append(n); }
+    $("extra").append(el);
+  }
+})();
+
+// "On this page": every part that carries data-toc, in page order
+for (const el of document.querySelectorAll("[data-toc]")) {
+  const li = document.createElement("li"), a = document.createElement("a");
+  a.href = `#${el.id}`; a.textContent = el.dataset.toc;
+  li.append(a); $("toc").append(li);
+}
 
 // ---------- boot ----------
 new ResizeObserver(() => { sizeCanvas($("priceCv")); sizeCanvas($("valueCv")); if (sc) draw(); }).observe($("priceCv"));

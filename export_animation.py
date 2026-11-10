@@ -18,6 +18,7 @@ from month_dip import month_dip
 from pause_check import LENGTHS, STARTS, absorbed, pause_rows, vs_dca
 from date_rank import WINDOWS, rank_dates
 import lump_vs_spread as lvs
+import cash_interest, fees, four_percent, international, real_returns, stock_bond_mix, trend_rule, withdrawals
 from pause_check import load as load_full
 
 root = Path(__file__).parent
@@ -240,8 +241,12 @@ for key, (file, label) in lvs.DATASETS.items():
         "grid": {**g, "first": day(g["first"]), "last": day(g["last"])}}
 print(f"lump vs spread: {len(lvs.SPREADS)} spreads, {len(lvs.LUMPS)}x{len(lvs.EXTRAS)} grid, {len(lvs.PEAKS)} peaks")
 
-payload = json.dumps({"buy": BUY, "scenarios": scenarios, "startCompare": start_compare,
-                      "pauseCheck": pause_check, "dateRank": date_rank, "lumpSpread": lump_spread}, separators=(",", ":"))
+# the wider investigations: each script returns its section ready to show (report.py)
+extra = [m.section() for m in (four_percent, trend_rule, international, real_returns, cash_interest, stock_bond_mix, fees, withdrawals)]
+print(f"extra sections: {', '.join(x['id'] for x in extra)}")
+
+payload = json.dumps({"buy": BUY, "scenarios": scenarios, "startCompare": start_compare, "pauseCheck": pause_check,
+                      "dateRank": date_rank, "lumpSpread": lump_spread, "extra": extra}, separators=(",", ":"))
 html = (root / "animation_template.html").read_text().replace("/*DATA*/null", payload)
 (site / "index.html").write_text(html)
 sizes = [f.stat().st_size for f in (site / "anim").glob("*.json")]
