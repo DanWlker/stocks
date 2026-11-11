@@ -1,4 +1,5 @@
-"""Monthly US market data 1928-01 .. 2026-10 for the macro analyses, plus a daily S&P total return.
+"""Monthly US market data from 1928-01 to the last month every source covers (CAPE aside), for the macro analyses,
+plus a daily S&P total return.
 
 monthly() columns, indexed by month start:
   stock_ret  S&P 500 total return (dividends reinvested), from month-average levels like Shiller's:
@@ -24,7 +25,7 @@ import pandas as pd
 warnings.filterwarnings("ignore", message="The xlrd engine is deprecated")
 
 data = Path(__file__).parent / "data"
-START, END = "1928-01", "2026-10"
+START = "1928-01"
 
 
 def fred(series):
@@ -69,7 +70,9 @@ def monthly():
         "stock_ret": stock_ret, "price": price, "cpi": fred("CPIAUCNS").interpolate(limit=1, limit_area="inside"),
         "cash_ret": short / 100 / 12, "bond_ret": bond_returns(gs10), "cape": sh["cape"],
     })
-    df = df[START:END]
+    df = df[START:][lambda d: d.index < pd.Period.now("M")]  # this month's averages would cover only part of it
+    have = df.drop(columns="cape").notna().all(axis=1)
+    df = df[:have[have].index[-1]]  # end at the last month every source has published
     missing = df.drop(columns="cape").isna().sum()
     assert not missing.any(), missing[missing > 0]
     return df

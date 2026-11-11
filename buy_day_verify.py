@@ -1,7 +1,7 @@
 """Cross-checks of buy_day.py's finding that the 25th-28th are the cheapest dates to buy, five ways:
   1. other markets, including the S&P 500 total-return index (dividends reinvested)
   2. bootstrap: resample S&P months with replacement, see where the cheapest date lands
-  3. split history: 1928-1976 and 1977-2026 on their own
+  3. split history: 1928-1976 and 1977 to the end of the data on their own
   4. trading-day position (n-th trading day from the start / end of the month) instead of calendar date
   5. a real DCA simulation: $BUY each month on date D (first trading day on or after D), final value
   6. same cash date: with money ready on the 26th, buy then or wait for the 1st; ready on the 1st, buy or wait for the 26th
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     print("  most common cheapest dates: " + ", ".join(f"{d} ({n / BOOT:.1%})" for d, n in best.value_counts().head(6).items()))
 
     print("\n== 3. split history (S&P)")
-    for lo, hi in [(1928, 1976), (1977, 2026)]:
+    for lo, hi in [(1928, 1976), (1977, sp_df["month"].max().year)]:
         half = sp_df[sp_df["month"].map(lambda p: lo <= p.year <= hi)]
         print(f"  {lo}-{hi} ({half['month'].nunique()} months): {describe(trim_by_date(half))}")
 

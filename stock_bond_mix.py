@@ -1,4 +1,4 @@
-"""#9 Stocks + bonds: portfolios from 100% S&P 500 (dividends reinvested) to 100% 10-year Treasuries, 1928-2026.
+"""#9 Stocks + bonds: portfolios from 100% S&P 500 (dividends reinvested) to 100% 10-year Treasuries, from 1928.
 
 Monthly data (monthly.py). Rebalanced back to the target mix every month unless stated; costs and taxes ignored.
 Drawdowns use month-average stock levels, so they are a little shallower than on daily closes.

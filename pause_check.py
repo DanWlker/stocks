@@ -1,4 +1,4 @@
-"""Bear-pause rule on the full S&P 500 history (1928-2026), against plain monthly DCA with the same
+"""Bear-pause rule on the full S&P 500 history (from 1928), against plain monthly DCA with the same
 $BUY on each month's first trading day, for several pause lengths and start dates.
 
 Per pause: DCA would have bought the skipped months at their first-day closes, costing on average

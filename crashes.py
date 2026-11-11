@@ -1,4 +1,4 @@
-"""How long does a crash (a fall of 20% or more) last? S&P 500 daily closes 1928-2026, price only.
+"""How long does a crash (a fall of 20% or more) last? S&P 500 daily closes from 1928, price only.
 
 Two common definitions:
   from all-time high - starts at an all-time high, bottoms at the lowest close before that high is

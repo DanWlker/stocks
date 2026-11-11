@@ -56,7 +56,7 @@ def section():
 
     rows_d, behind = [], []
     for dec in range(1930, 2030, 10):
-        h = hold[str(dec):str(min(dec + 9, 2026))]
+        h = hold[str(dec):str(dec + 9)]
         r = rule[h.index]
         n = (h.index[-1] - h.index[0]).days / 30.4375
         gh, gr = cagr(h.iloc[-1] / h.iloc[0], n), cagr(r.iloc[-1] / r.iloc[0], n)

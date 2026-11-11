@@ -5,7 +5,7 @@ default: build
 build:
     uv run python export_animation.py
 
-# Re-download the index data from Yahoo Finance into data/ (results can shift if Yahoo revises its history)
+# Download missing data into data/ and append rows newer than what is stored
 fetch:
     uv run python fetch_data.py
 

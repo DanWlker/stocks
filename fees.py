@@ -1,4 +1,4 @@
-"""#11 Fees: $BUY a month into the S&P 500 with dividends, for 10-40 years, every start month 1928-2026,
+"""#11 Fees: $BUY a month into the S&P 500 with dividends, for 10-40 years, every start month from 1928,
 with an annual fee taken monthly from the balance. Median final value and how much less than the cheapest fund.
 """
 

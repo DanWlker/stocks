@@ -9,7 +9,7 @@ that prints its results; `export_animation.py` gathers them into one static page
 Needs [uv](https://docs.astral.sh/uv/) and [just](https://github.com/casey/just).
 
 ```sh
-just fetch   # download the data into data/ (once)
+just fetch   # download the data into data/; later runs add only new rows
 just serve   # build site/ and serve it at http://127.0.0.1:8000
 ```
 
@@ -28,7 +28,10 @@ Any script also runs on its own and prints its tables, e.g. `uv run python pause
 - **FRED, monthly:** consumer prices (`CPIAUCNS`), 3-month bills (`TB3MS`), 10-year Treasuries (`GS10`), and the
   NBER short rate (`M1329AUSM193NNBR`) to cover bills before 1934.
 
-Yahoo sometimes revises its history, so a re-fetch can shift results slightly. Yahoo's Dow starts in 1992,
+A fetch downloads only what is missing: absent files in full, and for the open-ended series (the full-history
+indices and the growing FRED series) the rows after the last stored date, up to yesterday. The fixed crash windows,
+Shiller's file (it ends 2023-09) and the NBER rate (ends 1934) are never re-downloaded. Revisions Yahoo or FRED make
+to rows already stored are not picked up; delete a file to download it again in full. Yahoo's Dow starts in 1992,
 so the 1929 analyses use the S&P 500.
 
 ## Scripts
@@ -38,7 +41,7 @@ Shared code:
 | File | Role |
 |---|---|
 | `fetch_data.py` | Downloads the data above |
-| `monthly.py` | Monthly table 1928–2026: total return, price, consumer prices, bills, modelled 10-year bond return, CAPE; also a daily total-return series |
+| `monthly.py` | Monthly table from 1928 to the last month every source has published: total return, price, consumer prices, bills, modelled 10-year bond return, CAPE; also a daily total-return series |
 | `report.py` | The shape of one page section (title, summary, tables), printed in the terminal or drawn on the page |
 | `export_animation.py` | Runs the analyses and renders `animation_template.html` into `site/index.html` plus `site/anim/*.json` replays |
 
@@ -50,7 +53,7 @@ Buying rules on the two crashes and the full history:
 | `dca.py` | Buy each time the price drops 10% (three readings of that rule) vs lump sum and monthly DCA |
 | `month_dip.py` | Each month, buy on the first 10% (or 4%) dip, or on the last day if none |
 | `bear_pause.py` | At 20% below the record, pause buying until 31 months after the peak, then buy the skipped months at once |
-| `pause_check.py` | The pause rule over 1928–2026, for several pause lengths and start dates |
+| `pause_check.py` | The pause rule over the full history since 1928, for several pause lengths and start dates |
 | `crashes.py` | How long falls of 20% or more lasted |
 | `buy_day.py`, `buy_day_verify.py` | Which date of the month is cheapest to buy on, and six cross-checks |
 | `date_rank.py` | Monthly DCA on each date of the month, ranked over the last 10, 15 and 20 years |

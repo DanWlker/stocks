@@ -1,5 +1,5 @@
 """#12 Withdrawals: start with $1,000,000, take RATE x that in year one, raise it with inflation every month, for 30 years.
-Every start month 1928-01 .. 1996-11. Portfolios rebalanced monthly; "4% fixed" is the user's strategy that returns
+Every start month from 1928-01 that has 30 years of data after it. Portfolios rebalanced monthly; "4% fixed" is the user's strategy that returns
 4% a year (taken as nominal and guaranteed). Withdrawals come out at the start of each month.
 """
 

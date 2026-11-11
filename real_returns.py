@@ -41,7 +41,7 @@ def section():
 
     rows_d, bills_neg = [], 0
     for dec in range(1930, 2030, 10):
-        d = df[f"{dec}-01":f"{min(dec + 9, 2026)}-12"]
+        d = df[f"{dec}-01":f"{dec + 9}-12"]
         n = len(d)
         st = cagr((1 + d["stock_ret"]).prod(), n)
         infl = cagr(d["cpi"].iloc[-1] / d["cpi"].iloc[0], n - 1)

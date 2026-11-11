@@ -51,7 +51,7 @@ def section():
 
     rows_b = []
     for dec in range(1930, 2030, 10):
-        d = df[f"{dec}-01":f"{min(dec + 9, 2026)}-12"]
+        d = df[f"{dec}-01":f"{dec + 9}-12"]
         infl = cagr(d["cpi"].iloc[-1] / d["cpi"].iloc[0], len(d) - 1)
         st = cagr((1 + d["stock_ret"]).prod(), len(d))
         rows_b.append([f"{dec}s", f"{infl:+.1%}", f"{1.04 / (1 + infl) - 1:+.1%}", f"{(1 + st) / (1 + infl) - 1:+.1%}"])
